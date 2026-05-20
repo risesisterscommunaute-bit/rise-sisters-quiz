@@ -27,6 +27,12 @@ exports.handler = async (event) => {
     updateEnabled: true
   });
 
+  const apiKey = process.env.BREVO_API_KEY;
+  console.log('API Key present:', !!apiKey);
+  console.log('Email:', email);
+  console.log('Archetype:', archetype);
+  console.log('List ID:', listId);
+
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.brevo.com',
@@ -34,7 +40,7 @@ exports.handler = async (event) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
+        'api-key': apiKey,
         'Content-Length': Buffer.byteLength(payload)
       }
     };
@@ -43,14 +49,21 @@ exports.handler = async (event) => {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        console.log('Brevo status:', res.statusCode);
+        console.log('Brevo response:', data);
         resolve({
           statusCode: 200,
-          body: JSON.stringify({ success: true })
+          body: JSON.stringify({ 
+            success: true, 
+            brevo_status: res.statusCode,
+            brevo_response: data
+          })
         });
       });
     });
 
     req.on('error', (err) => {
+      console.log('Request error:', err.message);
       resolve({
         statusCode: 500,
         body: JSON.stringify({ error: err.message })
